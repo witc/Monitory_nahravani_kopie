@@ -434,6 +434,22 @@ def runRfCalib():
 
               ltext4.set('OK')
               lret4.config(fg="green")
+              
+              
+              # cteni pinu AUX6:
+              tempCnt = 0
+              while True:
+                tempCnt +=1
+                globalData.USBLink.readPinAux6(globalData)              
+                command,hodnota,nic2,nic3 = globalData.USBLink.rxUSBRFLink(0)
+                if command == 0x30  and nic2==nic3=="AUX6":
+                  if hodnota == 1:
+                    # test OK
+                    break
+                  
+                if  tempCnt > 4:
+                  #chyba
+                  break
 
               if USE_HMC8012 == True:
                 #mereni spotreby

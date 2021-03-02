@@ -114,6 +114,11 @@ class USBSerialLink:
                 del y_raw[:]
                 return 0x29, "button", "button", "button"
             
+            elif rxCmd == 3:
+                aux6 = int.from_bytes(y_raw[:1],byteorder='little')
+                del y_raw[:]
+                return 0x30, aux6,"AUX6","AUX6"
+
             else:
                 del y_raw[:]
                 return 0, 0, 0, 0
@@ -192,6 +197,13 @@ class USBSerialLink:
         
         self.txUSBRFLink(serialPacket)
 
+    def readPinAux6(self,globalData):
+        CmdSWD = 12
+        RFU=0
+        serialPacket=[globalData.MAC_HEADER.to_bytes(1,byteorder = 'big'), globalData.USB_STATIC_MAC.to_bytes(8,byteorder = 'little'), globalData.USB_STATIC_MAC.to_bytes(8,byteorder = 'little'),
+            globalData.ZERO_PADING.to_bytes(7,byteorder = 'big'), bytearray(4), CmdSWD.to_bytes(1,byteorder='big'),RFU.to_bytes(2,byteorder='big'),RFU.to_bytes(2,byteorder='big'),RFU.to_bytes(1,byteorder='big')]
+        
+        self.txUSBRFLink(serialPacket)
 
     def txUSBRFLink(self, data):
         bytePacket = bytearray()
