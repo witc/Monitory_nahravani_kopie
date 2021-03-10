@@ -31,10 +31,11 @@ import requests
 import git 
 import glob
 import shutil
+import signal
 
 
-USE_HMC8012 = False
-USE_FPL1003 = False
+USE_HMC8012 = True
+USE_FPL1003 = True
 USE_USB_RF_LINK = True
 
 mxFlasherConfig = EasySettings('MxFlasherConfig.conf')
@@ -86,7 +87,7 @@ monitorVersion = [
 root= Tk()
 root.title("Monitor MX - nahravani + test RF TX")
 root.geometry("800x450")
-menu = myMenuBar(root)
+#menu = myMenuBar(root)
 
 #------create Plot object on GUI----------
 #widgets
@@ -174,19 +175,15 @@ def keyboardForExit():
   value = input("Enter - ukonci aplikaci ")
   exit()
 
-# Clone Repo - priprava na stahovani aktualniho FW z repa do vyroby
-# directory = 'C:/Users/jan.ropek/Desktop/smazatP/mx10_assemblyline/.git'
-# try:
-#    os.rmdir(directory)
-# except OSError as e:
-#     print("Error:  %s" % (e.strerror))
+#Clone Repo - priprava na stahovani aktualniho FW z repa do vyroby
+directory = "C:\\VyrobaMonitory\\Binarky\\mx10_assemblyline" 
+try:
+   #shutil.rmtree(directory)
+   os.system("rmdir /s /q "+directory )
+except OSError as e:
+    print("Error:  %s" % (e.strerror))
 
-# try:
-#     shutil.rmtree(directory)
-# except OSError as e:
-#     print("Error:  %s" % (e.strerror))
-
-# git.Git('C:/Users/jan.ropek/Desktop/smazatP').clone("http://192.168.1.202/root/mx10_assemblyline.git")
+git.Git('C:\\VyrobaMonitory\\Binarky').clone("http://192.168.1.202/root/mx10_assemblyline.git")
 
 try:
   with open('C:/VyrobaMonitory/Binarky/mx10_assemblyline/FENCEE_Monitor.map') as f:     
@@ -215,10 +212,12 @@ def clickCloseApp():
   if messagebox.askokcancel("Quit", "Opravdu zavrit aplikaci?"):
     mxFlasherConfig.set("snJlink",globalData.J_Link_SN)
     mxFlasherConfig.save()
-  
-    root.destroy()
-    os._exit
-    #exit()
+
+    #os.kill(os.getpid(),signal.SIGKILL)
+    os._exit(1)
+    #root.destroy()
+    #os._exit
+    #sys.exit()
 
 def comboclick(event):
    global globalData
@@ -675,7 +674,7 @@ monitorCombo.current(0)
 monitorCombo.bind("<<ComboboxSelected>>",comboclick)
 monitorCombo.place(x = 180, y = 40)
 
-menu.addNewItem(globalData)
+#menu.addNewItem(globalData)
 
 timPCB = threading.Timer(0.5,lookForPCB)
 #timPCB.start()

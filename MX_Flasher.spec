@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['MX_Flasher.py'],
-             pathex=['C:\\Users\\jan.ropek\\Documents\\aaVNT_2016\\Vyvoj_projekty\\Ohradniky\\MonitorMX\\Vyrobni_Upload_Monitor'],
+             pathex=['C:\\Users\\jan.ropek\\Documents\\aaVNT_2016\\Vyvoj_projekty\\Ohradniky\\MonitorMX\\VyrobaTooly\\VyrobaNahravani'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -19,19 +19,15 @@ pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
+          a.binaries,
+          a.zipfiles,
+          a.datas,
           [],
-          exclude_binaries=True,
           name='MX_Flasher',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
+          upx_exclude=[],
+          runtime_tmpdir=None,
           console=True )
-coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=False,
-               upx=True,
-               upx_exclude=[],
-               name='MX_Flasher')
