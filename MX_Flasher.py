@@ -86,13 +86,13 @@ monitorVersion = [
 # Create label widget
 root= Tk()
 root.title("Monitor MX - nahravani + test RF TX")
-root.geometry("800x450")
+root.geometry("800x500")
 #menu = myMenuBar(root)
 
 #------create Plot object on GUI----------
 #widgets
 console = Text(root,height=8, width=75)
-console.place(x=23,y=290)
+console.place(x=23,y=320)
 console.tag_config('normal', background="white", foreground="black")
 
 console.tag_config('warning', background="yellow", foreground="black")
@@ -106,6 +106,7 @@ ltext3=tk.StringVar()
 ltext4=tk.StringVar()
 ltext6=tk.StringVar()
 ltext8=tk.StringVar()
+ltext9=tk.StringVar()
 
 ltext1.set(emptyText)
 ltext2.set(emptyText)
@@ -113,6 +114,7 @@ ltext3.set(emptyText)
 ltext4.set(emptyText)
 ltext6.set(emptyText)
 ltext8.set(emptyText)
+ltext9.set(emptyText)
 
 #Label(root, text="NAHRAVANI a test RF: ",fg="Black", font=("Verdana", 12)).place(x = 350, y = 60)  
 Label(root, text="1: Program ",fg="Black", font=("Verdana", 12)).place(x =520, y = 60)  
@@ -134,6 +136,10 @@ lret4.place(x = 700, y = 180)
 Label(root, text="5: Spotreba",fg="Black", font=("Verdana", 12)).place(x = 520, y = 220)  
 lret6 =Label(root, textvariable=ltext6,fg="Black", font=("Verdana", 12))
 lret6.place(x = 700, y = 220)
+
+Label(root, text="6: Test R",fg="Black", font=("Verdana", 12)).place(x = 520, y = 260)  
+lret9 =Label(root, textvariable=ltext9,fg="Black", font=("Verdana", 12))
+lret9.place(x = 700, y = 260)
 
 
 Label(root, text="Verze vyrobku: ",fg="Black", font=("Verdana", 12)).place(x = 25, y = 38)  
@@ -176,14 +182,14 @@ def keyboardForExit():
   exit()
 
 #Clone Repo - priprava na stahovani aktualniho FW z repa do vyroby
-directory = "C:\\VyrobaMonitory\\Binarky\\mx10_assemblyline" 
-try:
-   #shutil.rmtree(directory)
-   os.system("rmdir /s /q "+directory )
-except OSError as e:
-    print("Error:  %s" % (e.strerror))
+# directory = "C:\\VyrobaMonitory\\Binarky\\mx10_assemblyline" 
+# try:
+#    #shutil.rmtree(directory)
+#    os.system("rmdir /s /q "+directory )
+# except OSError as e:
+#     print("Error:  %s" % (e.strerror))
 
-git.Git('C:\\VyrobaMonitory\\Binarky').clone("http://192.168.1.202/root/mx10_assemblyline.git")
+# git.Git('C:\\VyrobaMonitory\\Binarky').clone("http://192.168.1.202/root/mx10_assemblyline.git")
 
 try:
   with open('C:/VyrobaMonitory/Binarky/mx10_assemblyline/FENCEE_Monitor.map') as f:     
@@ -259,7 +265,7 @@ def ledEndOfMeas(succes):
 def clickUploadCode():
     global globalData
     global RfThreadRun
-    global ltext1, ltext2,ltext3,ltext4
+    global ltext1, ltext2,ltext3,ltext4,ltext9
     global entry1
     global ButtonThreadRun
 
@@ -281,6 +287,7 @@ def clickUploadCode():
     ltext4.set(emptyText)
     ltext6.set(emptyText)
     ltext8.set(emptyText)
+    ltext9.set(emptyText)
 
     lret1.config(fg="black")
     lret2.config(fg="black")
@@ -402,6 +409,7 @@ def runRfCalib():
 
   global RfThreadRun
   rssiOK = False
+  pulseWayOK = False
   while True:
     time.sleep(0.1)
     while RfThreadRun == True:
@@ -434,7 +442,6 @@ def runRfCalib():
               ltext4.set('OK')
               lret4.config(fg="green")
               
-              
               # cteni pinu AUX6:
               tempCnt = 0
               while True:
@@ -444,78 +451,98 @@ def runRfCalib():
                 if command == 0x30  and nic2==nic3=="AUX6":
                   if hodnota == 1:
                     # test OK
+                    pulseWayOK = True
                     break
                   
                 if  tempCnt > 4:
                   #chyba
                   break
-
-              if USE_HMC8012 == True:
-                #mereni spotreby
-                globalData.USBLink.switchSWDOff(globalData)
-                #time.sleep(0.5)
-                globalData.HMC8012.setCurrentAutoRange()
-                #globalData.HMC8012.startDCIMeas()
-                time.sleep(2)
-                dcI =  globalData.HMC8012.getAvg()
-                dcI = abs(dcI)
-                globalData.sqConsumption = dcI
-                if dcI < 0.000045:
-                  prt.myPrint(globalData,'Mereni spotreby - OK - PROUD: ' + str(dcI)+' A', tag ='ok')
                 
+              if pulseWayOK == True:
+                if USE_HMC8012 == True:
+                  #mereni spotreby
+                  globalData.USBLink.switchSWDOff(globalData)
+                  #time.sleep(0.5)
+                  globalData.HMC8012.setCurrentAutoRange()
+                  #globalData.HMC8012.startDCIMeas()
+                  time.sleep(2)
+                  dcI =  globalData.HMC8012.getAvg()
+                  dcI = abs(dcI)
+                  globalData.sqConsumption = dcI
+                  if dcI < 0.000045:
+                    prt.myPrint(globalData,'Mereni spotreby - OK - PROUD: ' + str(dcI)+' A', tag ='ok')
+                  
+                    # ulozeni do databaze
+                    if globalData.sqVersion == 1:
+                      textVers = "Fencee"
+                    else:
+                      textVers = "VOSS"
+
+                    #tempDate = datetime.datetime.fromtimestamp
+                    cursor.execute('INSERT INTO MXdata VALUES(?,?,?,?,?)',(str(hex(globalData.sqMAC)), globalData.sqTXPower, globalData.sqRXRssi, globalData.sqConsumption, textVers))
+                    con.commit()
+
+                    measOk = True
+                
+                  else:
+                    prt.myPrint(globalData,'Prilis velky odber proudu! PROUD: ' + str(dcI)+' A', tag = 'error')
+                    ltext6.set('CHYBA')
+                    lret6.config(fg="red")
+            
+                  globalData.HMC8012.setCurrentMaxRange()
+                  globalData.USBLink.switchSWDOn(globalData)
+                  
+                  time.sleep(0.1)
+                  #resetovanim se M zapne
+                  globalData.STM32.resetMcu()
+                  time.sleep(0.2)
+                  globalData.STM32.resetMcu()
+
+                  b1["text"] = "N A H R A T"
+                  b1["state"] = "normal"
+                  RfThreadRun = False
+
+                  if measOk == True:
+                    ltext6.set('OK')
+                    lret6.config(fg="green")
+                    ltext8.set('OK')
+                    lret8.config(fg="green")
+                    measOk=False
+                    ledEndOfMeas(True)
+                  else:
+                    ltext8.set('Chyba')
+                    lret8.config(fg="red")
+                    ledEndOfMeas(False)
+
+                else:
+                  globalData.STM32.resetMcu()
                   # ulozeni do databaze
                   if globalData.sqVersion == 1:
                     textVers = "Fencee"
                   else:
                     textVers = "VOSS"
 
+                  ledEndOfMeas(True)
+                  ltext8.set('OK')
+                  lret8.config(fg="green")
                   #tempDate = datetime.datetime.fromtimestamp
                   cursor.execute('INSERT INTO MXdata VALUES(?,?,?,?,?)',(str(hex(globalData.sqMAC)), globalData.sqTXPower, globalData.sqRXRssi, globalData.sqConsumption, textVers))
                   con.commit()
-
-                  measOk = True
               
-                else:
-                  prt.myPrint(globalData,'Prilis velky odber proudu! PROUD: ' + str(dcI)+' A', tag = 'error')
-                  ltext6.set('CHYBA')
-                  lret6.config(fg="red")
-                  ltext8.set('Chyba')
-                  lret8.config(fg="red")
-                  ledEndOfMeas(False)
-          
-                globalData.HMC8012.setCurrentMaxRange()
-                globalData.USBLink.switchSWDOn(globalData)
-                
-                time.sleep(0.1)
-                #resetovanim se M zapne
-                globalData.STM32.resetMcu()
-                time.sleep(0.2)
-                globalData.STM32.resetMcu()
+              else: #vstupni R - Fail
+                prt.myPrint(globalData,'Chyba vstupni R ', tag = 'error' )  
+                ltext9.set('CHYBA')
+                lret9.config(fg="red")
+                ltext8.set('Chyba')
+                lret8.config(fg="red")
+                b1["text"] = "N A H R A T"
+                b1["state"] = "normal"
+                # b2["state"] = "normal"
+                RfThreadRun = False
 
-                if measOk == True:
-                  ltext6.set('OK')
-                  lret6.config(fg="green")
-                  ltext8.set('OK')
-                  lret8.config(fg="green")
-                  measOk=False
-                  ledEndOfMeas(True)
+                ledEndOfMeas(False)
 
-              else:
-                globalData.STM32.resetMcu()
-                # ulozeni do databaze
-                if globalData.sqVersion == 1:
-                  textVers = "Fencee"
-                else:
-                  textVers = "VOSS"
-
-                ledEndOfMeas(True)
-                ltext8.set('OK')
-                lret8.config(fg="green")
-                #tempDate = datetime.datetime.fromtimestamp
-                cursor.execute('INSERT INTO MXdata VALUES(?,?,?,?,?)',(str(hex(globalData.sqMAC)), globalData.sqTXPower, globalData.sqRXRssi, globalData.sqConsumption, textVers))
-                con.commit()
-
-            else:
+            else: #RSSI fail
               prt.myPrint(globalData,'Chybny RSSI Test ', tag = 'error' )
               ltext4.set('CHYBA')
               lret4.config(fg="red")
@@ -550,7 +577,7 @@ def runRfCalib():
             b1["text"] = "N A H R A T"
             b1["state"] = "normal"
             ledEndOfMeas(False)
-            
+  
 def runScanButton():
   global ButtonThreadRun
   global globalData
