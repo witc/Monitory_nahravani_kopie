@@ -43,6 +43,8 @@ SNJlink = mxFlasherConfig.get('snJlink')
 IpAnalyzer = mxFlasherConfig.get('IpAnalyzer') 
 IpAmpMeter = mxFlasherConfig.get('IpAmpMeter')
 minTxPower = mxFlasherConfig.get('minTxPower[dBm]')
+TestRezistors = mxFlasherConfig.get('TestRezistors')
+
 
 if SNJlink == '':
   mxFlasherConfig.set("snJlink",260102277)
@@ -64,6 +66,10 @@ if minTxPower == '':
   mxFlasherConfig.save()
   minTxPower = mxFlasherConfig.get('minTxPower[dBm]') 
 
+if TestRezistors == '':
+  mxFlasherConfig.set("TestRezistors",True) 
+  mxFlasherConfig.save()
+  TestRezistors = mxFlasherConfig.get('TestRezistors') 
 
 print("Seriove cislo JLink: ", SNJlink)
 print("Ip adresa pro spektralni analyzator FPL1003: ", IpAnalyzer)
@@ -133,14 +139,13 @@ Label(root, text="4: Test Rx",fg="Black", font=("Verdana", 12)).place(x = 520, y
 lret4 =Label(root, textvariable=ltext4,fg="Black", font=("Verdana", 12))
 lret4.place(x = 700, y = 180)
 
-Label(root, text="5: Spotreba",fg="Black", font=("Verdana", 12)).place(x = 520, y = 220)  
-lret6 =Label(root, textvariable=ltext6,fg="Black", font=("Verdana", 12))
-lret6.place(x = 700, y = 220)
-
-Label(root, text="6: Test R",fg="Black", font=("Verdana", 12)).place(x = 520, y = 260)  
+Label(root, text="5: Test R",fg="Black", font=("Verdana", 12)).place(x = 520, y = 220)  
 lret9 =Label(root, textvariable=ltext9,fg="Black", font=("Verdana", 12))
-lret9.place(x = 700, y = 260)
+lret9.place(x = 700, y = 220)
 
+Label(root, text="6: Spotreba",fg="Black", font=("Verdana", 12)).place(x = 520, y = 260)  
+lret6 =Label(root, textvariable=ltext6,fg="Black", font=("Verdana", 12))
+lret6.place(x = 700, y = 260)
 
 Label(root, text="Verze vyrobku: ",fg="Black", font=("Verdana", 12)).place(x = 25, y = 38)  
 
@@ -268,6 +273,7 @@ def clickUploadCode():
     global ltext1, ltext2,ltext3,ltext4,ltext9
     global entry1
     global ButtonThreadRun
+    global TestRezistors
 
     tempVer = 2
     if globalData.monitorVers == "!!Vyber verzi!!":
@@ -436,40 +442,51 @@ def runRfCalib():
             if rssiOK == True:
               rssiOK = False
               prt.myPrint(globalData,'rssi Test OK', tag = 'ok' )
-              globalData.STM32.shutDownMx(globalData)
-              time.sleep(0.5)
-
               ltext4.set('OK')
               lret4.config(fg="green")
               
               # cteni pinu AUX6:
-              tempCnt = 0
-              while True:
-                tempCnt +=1
-                globalData.USBLink.readPinAux6(globalData)              
-                command,hodnota,nic2,nic3 = globalData.USBLink.rxUSBRFLink(0)
-                if command == 0x30  and nic2==nic3=="AUX6":
-                  if hodnota == 1:
-                    # test OK
-                    pulseWayOK = True
+              if TestRezistors == True:
+                tempCnt = 0
+                while True:
+                  tempCnt +=1
+                  globalData.USBLink.readPinAux6(globalData)              
+                  command,hodnota,nic2,nic3 = globalData.USBLink.rxUSBRFLink(0)
+                  if command == 0x30  and nic2==nic3=="AUX6":
+                    if hodnota == 1:
+                      # test OK
+                      pulseWayOK = True
+                      break
+                    else:
+                      pulseWayOK = False
+                      break
+                    
+                  if  tempCnt > 4:
+                    #chyba
+                    prt.myPrint(globalData,'Chyba testeru - mereni R ', tag = 'error' )  
                     break
-                  
-                if  tempCnt > 4:
-                  #chyba
-                  break
-                
+                    
+              else:
+                pulseWayOK = True
+
               if pulseWayOK == True:
+
+                ltext9.set('OK')
+                lret9.config(fg="green")
+
                 if USE_HMC8012 == True:
                   #mereni spotreby
+                  globalData.STM32.shutDownMx(globalData)
+                  time.sleep(0.5)
                   globalData.USBLink.switchSWDOff(globalData)
-                  #time.sleep(0.5)
+                  time.sleep(0.1)
                   globalData.HMC8012.setCurrentAutoRange()
                   #globalData.HMC8012.startDCIMeas()
                   time.sleep(2)
                   dcI =  globalData.HMC8012.getAvg()
                   dcI = abs(dcI)
                   globalData.sqConsumption = dcI
-                  if dcI < 0.000045:
+                  if dcI < 0.000055:
                     prt.myPrint(globalData,'Mereni spotreby - OK - PROUD: ' + str(dcI)+' A', tag ='ok')
                   
                     # ulozeni do databaze
@@ -488,6 +505,7 @@ def runRfCalib():
                     prt.myPrint(globalData,'Prilis velky odber proudu! PROUD: ' + str(dcI)+' A', tag = 'error')
                     ltext6.set('CHYBA')
                     lret6.config(fg="red")
+                    measOk = False
             
                   globalData.HMC8012.setCurrentMaxRange()
                   globalData.USBLink.switchSWDOn(globalData)
