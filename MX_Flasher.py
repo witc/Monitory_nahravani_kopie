@@ -1,7 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
-import pandas as pd
+#import matplotlib.pyplot as plt
+#from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
+#import pandas as pd
 import os
 import ctypes
 import sys
@@ -28,7 +28,7 @@ import serial
 from HMC8012Class import HMC8012Class
 import sqlite3 as sl
 import requests
-import git 
+import git
 import glob
 import shutil
 import signal
@@ -44,6 +44,7 @@ IpAnalyzer = mxFlasherConfig.get('IpAnalyzer')
 IpAmpMeter = mxFlasherConfig.get('IpAmpMeter')
 minTxPower = mxFlasherConfig.get('minTxPower[dBm]')
 TestRezistors = mxFlasherConfig.get('TestRezistors')
+oscilatorVers = mxFlasherConfig.get('oscilatorVers')
 
 
 if SNJlink == '':
@@ -67,9 +68,15 @@ if minTxPower == '':
   minTxPower = mxFlasherConfig.get('minTxPower[dBm]') 
 
 if TestRezistors == '':
-  mxFlasherConfig.set("TestRezistors",True) 
+  mxFlasherConfig.set("TestRezistors",1) 
   mxFlasherConfig.save()
   TestRezistors = mxFlasherConfig.get('TestRezistors') 
+
+if oscilatorVers == '':
+  mxFlasherConfig.set("oscilatorVers","TCXO") 
+  mxFlasherConfig.save()
+  oscilatorVers = mxFlasherConfig.get('oscilatorVers') 
+
 
 print("Seriove cislo JLink: ", SNJlink)
 print("Ip adresa pro spektralni analyzator FPL1003: ", IpAnalyzer)
@@ -187,17 +194,30 @@ def keyboardForExit():
   exit()
 
 #Clone Repo - priprava na stahovani aktualniho FW z repa do vyroby
-# directory = "C:\\VyrobaMonitory\\Binarky\\mx10_assemblyline" 
-# try:
-#    #shutil.rmtree(directory)
-#    os.system("rmdir /s /q "+directory )
-# except OSError as e:
-#     print("Error:  %s" % (e.strerror))
+directory = "C:\\VyrobaMonitory\\Binarky\\" 
+try:
+   #shutil.rmtree(directory)
+   os.system("rmdir /s /q "+directory )
+except OSError as e:
+    print("Error:  %s" % (e.strerror))
 
-# git.Git('C:\\VyrobaMonitory\\Binarky').clone("http://192.168.1.202/root/mx10_assemblyline.git")
+if oscilatorVers == 'TCXO':
+  bran = 'Release_TCXO'
+elif oscilatorVers == 'XTALL':
+  bran = 'Release_XTALL'
+else:
+  prt.myPrint(globalData,"Vyber XTALL/TCXO verzi v configu", tag = 'error' )
+  keyboardForExit() 
+
+git.Repo.clone_from("http://192.168.1.202/JanR/fenceemonitormx10.git",'C:\\VyrobaMonitory\\Binarky',branch = bran)
+#git.Git('C:\\VyrobaMonitory\\Binarky').clone("http://192.168.1.202/JanR/fenceemonitormx10.git")
+#clonedRepo = git.Repo("C:\\VyrobaMonitory\\Binarky\\fenceemonitormx10")
+# checkout the branch using git-checkout. It will fail as the working tree appears dirty
+#self.assertRaises(git.GitCommandError, git.repo.heads.master.checkout)
+#git.Repo.heads.past_branch.checkout()
 
 try:
-  with open('C:/VyrobaMonitory/Binarky/mx10_assemblyline/FENCEE_Monitor.map') as f:     
+  with open(directory+'/FENCEE_Monitor.map') as f:     
     file=f.read()
     if 'GlFactoryTest' in file:      
         keyword = "GlFactoryTest"
@@ -325,7 +345,7 @@ def clickUploadCode():
         return 
     
     try:
-      f = open('C:/VyrobaMonitory/Binarky/mx10_assemblyline/FENCEE_Monitor.binary', 'rb')
+      f = open('C:\\VyrobaMonitory\\Binarky\\FENCEE_Monitor.binary', 'rb')
       t= f.read()
       f.close()
     except:
@@ -446,7 +466,8 @@ def runRfCalib():
               lret4.config(fg="green")
               
               # cteni pinu AUX6:
-              if TestRezistors == True:
+              if TestRezistors == 1:
+				
                 tempCnt = 0
                 while True:
                   tempCnt +=1
@@ -463,6 +484,7 @@ def runRfCalib():
                     
                   if  tempCnt > 4:
                     #chyba
+                    pulseWayOK = False
                     prt.myPrint(globalData,'Chyba testeru - mereni R ', tag = 'error' )  
                     break
                     

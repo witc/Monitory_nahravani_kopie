@@ -1,0 +1,9 @@
+matplotlib
+pyvisa
+numpy
+pandas
+bincopy
+easysettings
+pyserial
+requests
+GitPython
