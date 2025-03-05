@@ -94,6 +94,7 @@ monitorVersion = [
   "!!Vyber verzi!!",
   "Fencee - Cesko",
   "Voss - Nemecko",
+  "ZEBU - Latin America",
 ]
 
 # Create label widget
@@ -202,14 +203,14 @@ except OSError as e:
     print("Error:  %s" % (e.strerror))
 
 if oscilatorVers == 'TCXO':
-  bran = 'Release_TCXO'
+  bran = 'Test_Alarm'
 elif oscilatorVers == 'XTALL':
   bran = 'Release_XTALL'
 else:
   prt.myPrint(globalData,"Vyber XTALL/TCXO verzi v configu", tag = 'error' )
   keyboardForExit() 
-
-git.Repo.clone_from("http://192.168.1.202/JanR/fenceemonitormx10.git",'C:\\VyrobaMonitory\\Binarky',branch = bran)
+#http://192.168.1.202/assemblyline/monitor.git
+git.Repo.clone_from("http://192.168.1.127/assemblyline/monitor.git",'C:\\VyrobaMonitory\\Binarky',branch = bran)
 #git.Git('C:\\VyrobaMonitory\\Binarky').clone("http://192.168.1.202/JanR/fenceemonitormx10.git")
 #clonedRepo = git.Repo("C:\\VyrobaMonitory\\Binarky\\fenceemonitormx10")
 # checkout the branch using git-checkout. It will fail as the working tree appears dirty
@@ -251,9 +252,34 @@ def clickCloseApp():
     #sys.exit()
 
 def comboclick(event):
-   global globalData
-   globalData.monitorVers =  monitorCombo.get()
-   threading.Timer(0.5,lookForPCB).cancel()
+  global globalData
+  globalData.monitorVers =  monitorCombo.get()
+  directory = "C:\\VyrobaMonitory\\Binarky\\" 
+  try:
+    #shutil.rmtree(directory)
+    os.system("rmdir /s /q "+directory )
+  except OSError as e:
+    print("Error:  %s" % (e.strerror))
+
+  if globalData.monitorVers == "Fencee - Cesko":
+    bran = 'master_Fencee'
+  elif globalData.monitorVers == "Voss - Nemecko":
+    bran = 'master_Fencee'
+  elif globalData.monitorVers == "ZEBU - Latin America":
+    bran = 'master_ZEBU'
+  else:
+    prt.myPrint(globalData,"Vyber verzi", tag = 'error' )
+    keyboardForExit() 
+  #http://192.168.1.202/assemblyline/monitor.git
+
+  try:
+    git.Repo.clone_from("http://192.168.1.127/assemblyline/monitor.git",'C:\\VyrobaMonitory\\Binarky',branch = bran)
+    prt.myPrint(globalData,'FW Pripraven',tag='ok')
+  except:
+    prt.myPrint(globalData,'Chyba pri stahovani FW z gitu',tag='error')
+    pass
+
+  threading.Timer(0.5,lookForPCB).cancel()
 
 def setRfSwitch(switch):
     serialPacket=[globalData.MAC_HEADER.to_bytes(1,byteorder = 'big'), globalData.USB_STATIC_MAC.to_bytes(8,byteorder = 'little'), globalData.USB_STATIC_MAC.to_bytes(8,byteorder = 'little'),
@@ -424,7 +450,11 @@ def clickUploadCode():
 
 def runRfCalib():
   # databaze historie
-  con = sl.connect('C:/VyrobaMonitory/Zaznam/MX_History.db')
+  try:
+    con = sl.connect('C:/VyrobaMonitory/Zaznam/MX_History.db')
+  except:
+    pass
+
   try:
     cursor = con.cursor()
     cursor.execute("CREATE TABLE MXdata ( MAC Text, TXPower_dBm INTEGER, RXRssi_dBm INTEGER, Consumption_uA INTEGER, Version Text)")
