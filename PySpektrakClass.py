@@ -7,7 +7,7 @@ import pyvisa
 
 class SpektrakClass:
 
-    def connectSpektrak(self,IpAdr):
+    def connectSpektrak(self,IpAdr,freq):
         
         try:
             rm = pyvisa.ResourceManager()
@@ -23,16 +23,17 @@ class SpektrakClass:
 
         #prt.myPrint(globalData,'Oscilloscope found: '+self.scope.query('*IDN?'),tag = 'ok')
         print("Spectrum analyzer found: " +self.analyzer.query('*IDN?'))  
-        self.initSpektrak()
+        self.initSpektrak(freq)
 
-    def initSpektrak(self):
+    def initSpektrak(self,freq):
         self.analyzer.write("*CLS") # Clear status
         #self.analyzer.write("*RST") # Reset the instrument, clear the Error queue
         #self.queryOpc()
         self.analyzer.write("INIT:CONT OFF") # Switch OFF the continuous sweepd
         self.queryOpc()
         #Basic Setting
-        self.analyzer.write('FREQ:CENT 869525000Hz')
+        #self.analyzer.write('FREQ:CENT 869525000Hz')
+        self.analyzer.write(f'FREQ:CENT {freq}Hz')
         self.queryOpc()
         self.analyzer.write('FREQ:SPAN 100KHz')
         self.queryOpc()

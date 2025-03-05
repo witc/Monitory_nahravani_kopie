@@ -681,13 +681,23 @@ def testTools(firstTest):
     global glSerialLinkConnected
     global glToolsConnected 
     global ButtonThreadRun
+    global globalData
     HMC8012Connected = False
 
     #zkouska spojeni spektralni analyzator
     if USE_FPL1003 == True:
       analyzer=SpektrakClass()
       globalData.analyzer = analyzer
-      retAlyzer = analyzer.connectSpektrak(IpAnalyzer)
+      if globalData.monitorVers == "Fencee - Cesko":
+        freq = 869525000
+      elif globalData.monitorVers == "Voss - Nemecko":
+        freq = 869525000
+      elif globalData.monitorVers == "ZEBU - Latin America":
+        freq = 915200000
+      else:
+        freq = 869525000
+        
+      retAlyzer = analyzer.connectSpektrak(IpAnalyzer,freq)
       if retAlyzer == False:
         prt.myPrint(globalData,'Spectral analyzer did not find',tag='error') 
         prt.myPrint(globalData,'with IP Adress:' + IpAnalyzer,tag = 'error' )
