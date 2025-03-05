@@ -96,6 +96,7 @@ monitorVersion = [
   "Voss - Nemecko",
   "ZEBU - Latin America",
 ]
+wanted_freq = 869525000
 
 # Create label widget
 root= Tk()
@@ -449,6 +450,7 @@ def clickUploadCode():
     return 
 
 def runRfCalib():
+  global wanted_freq
   # databaze historie
   try:
     con = sl.connect('C:/VyrobaMonitory/Zaznam/MX_History.db')
@@ -470,7 +472,7 @@ def runRfCalib():
     time.sleep(0.1)
     while RfThreadRun == True:
         if rfclb.RfCalibEnabled() == True:
-          temp = rfclb.measureRFProc(globalData)
+          temp = rfclb.measureRFProc(globalData,wanted_freq)
           if temp == "OK":  # Teset TX OK
             ltext3.set('OK')
             lret3.config(fg="green")
@@ -682,6 +684,7 @@ def testTools(firstTest):
     global glToolsConnected 
     global ButtonThreadRun
     global globalData
+    global wanted_freq
     HMC8012Connected = False
 
     #zkouska spojeni spektralni analyzator
@@ -689,15 +692,15 @@ def testTools(firstTest):
       analyzer=SpektrakClass()
       globalData.analyzer = analyzer
       if globalData.monitorVers == "Fencee - Cesko":
-        freq = 869525000
+        wanted_freq = 869525000
       elif globalData.monitorVers == "Voss - Nemecko":
-        freq = 869525000
+        wanted_freq = 869525000
       elif globalData.monitorVers == "ZEBU - Latin America":
-        freq = 915200000
+        wanted_freq = 915200000
       else:
-        freq = 869525000
-        
-      retAlyzer = analyzer.connectSpektrak(IpAnalyzer,freq)
+        wanted_freq = 869525000
+
+      retAlyzer = analyzer.connectSpektrak(IpAnalyzer,wanted_freq)
       if retAlyzer == False:
         prt.myPrint(globalData,'Spectral analyzer did not find',tag='error') 
         prt.myPrint(globalData,'with IP Adress:' + IpAnalyzer,tag = 'error' )

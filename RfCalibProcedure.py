@@ -31,7 +31,7 @@ def initAndStartCalibRf(globalData):
    globalData.analyzer.clearTraces()
    startRfCalib()
    
-def measureRFProc(globalData):
+def measureRFProc(globalData, freq_in):
     global glRfPowerAttempt
     global glRfFreqAttempt
     global glRfTestFreq
@@ -67,7 +67,7 @@ def measureRFProc(globalData):
     globalData.sqTXPower = power
     
     if (power)>=(globalData.minTxPower):
-      if (freq) >= 869524000 and (freq) <= 869526000:
+      if (freq) >= freq_in-1000  and (freq) <= freq_in+1000:
         # measure is done - OK
         globalData.STM32.saveRfTxOK(globalData)
         prt.myPrint(globalData,"Rf TX - OK",tag = 'ok')
