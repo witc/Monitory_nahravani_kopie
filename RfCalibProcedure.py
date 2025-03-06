@@ -82,7 +82,7 @@ def measureRFProc(globalData, freq_in):
           #ukonci mereni
           return "FalseTX"
 
-      newFreq=869525000-(freq)
+      newFreq=freq_in-(freq)
       newFreq=glRfTestFreq+newFreq
       glRfTestFreq=newFreq
 
